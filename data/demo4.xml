@@ -1,0 +1,38 @@
+<annotation>
+	<folder>demo</folder>
+	<filename>demo4.png</filename>
+	<path>E:\thinh\labelImg\demo\demo4.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>1919</width>
+		<height>1079</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>chicken breast</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>1076</xmin>
+			<ymin>143</ymin>
+			<xmax>1324</xmax>
+			<ymax>428</ymax>
+		</bndbox>
+	</object>
+	<object>
+		<name>car</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>349</xmin>
+			<ymin>525</ymin>
+			<xmax>822</xmax>
+			<ymax>660</ymax>
+		</bndbox>
+	</object>
+</annotation>
