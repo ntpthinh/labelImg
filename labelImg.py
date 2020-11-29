@@ -12,7 +12,8 @@ import subprocess
 from functools import partial
 from collections import defaultdict
 
-from libs.PICK_io import TSV_EXT
+from libs.PICK_io import TSV_EXT, PICKReader
+from libs.textDialog import TextDialog
 
 try:
     from PyQt5.QtGui import *
@@ -91,7 +92,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Save as Pascal voc xml
         self.defaultSaveDir = defaultSaveDir
-        self.labelFileFormat = settings.get(SETTING_LABEL_FILE_FORMAT, LabelFileFormat.PICK)
+        self.labelFileFormat = settings.get(SETTING_LABEL_FILE_FORMAT, LabelFileFormat.PASCAL_VOC)
 
         # For loading all image under a directory
         self.mImgList = []
@@ -112,6 +113,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Main widgets and related state.
         self.labelDialog = LabelDialog(parent=self, listItem=self.labelHist)
+        self.textChangeDialog = TextDialog(parent=self)
 
         self.itemsToShapes = {}
         self.shapesToItems = {}
@@ -136,9 +138,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.diffcButton.stateChanged.connect(self.btnstate)
         self.editButton = QToolButton()
         self.editButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.editTextButton = QToolButton()
+        self.editTextButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
 
         # Add some of widgets to listLayout
         listLayout.addWidget(self.editButton)
+        listLayout.addWidget(self.editTextButton)
         listLayout.addWidget(self.diffcButton)
         listLayout.addWidget(useDefaultLabelContainer)
 
@@ -328,6 +333,10 @@ class MainWindow(QMainWindow, WindowMixin):
                       'Ctrl+E', 'edit', getStr('editLabelDetail'),
                       enabled=False)
         self.editButton.setDefaultAction(edit)
+        editText = action('Edit text', self.editText,
+                      'Ctrl+T', 'editText', getStr('editLabelDetail'),
+                      enabled=False)
+        self.editTextButton.setDefaultAction(editText)
 
         shapeLineColor = action(getStr('shapeLineColor'), self.chshapeLineColor,
                                 icon='color_line', tip=getStr('shapeLineColorDetail'),
@@ -355,8 +364,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.drawSquaresOption.triggered.connect(self.toogleDrawSquare)
 
         # Store actions for further handling.
-        self.actions = struct(save=save, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll, deleteImg = deleteImg,
-                              lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
+        self.actions = struct(save=save, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll=resetAll, deleteImg = deleteImg,
+                              lineColor=color1, create=create, delete=delete, edit=edit, copy=copy, editText=editText,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -551,9 +560,9 @@ class MainWindow(QMainWindow, WindowMixin):
         elif self.labelFileFormat == LabelFileFormat.YOLO:
             self.set_format(FORMAT_CREATEML)
         elif self.labelFileFormat == LabelFileFormat.CREATE_ML:
-            self.set_format(FORMAT_PASCALVOC)
-        elif self.labelFileFormat == LabelFileFormat.PICK:
             self.set_format(FORMAT_PICK)
+        elif self.labelFileFormat == LabelFileFormat.PICK:
+            self.set_format(FORMAT_PASCALVOC)
         else:
             raise ValueError('Unknown label file format.')
         self.setDirty()
@@ -633,6 +642,10 @@ class MainWindow(QMainWindow, WindowMixin):
         if items:
             return items[0]
         return None
+
+    def currentText(self):
+        shape = self.canvas.selectedShape
+        return shape['text']
 
     def addRecentFile(self, filePath):
         if filePath in self.recentFiles:
@@ -720,13 +733,25 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.currentItem()
         if not item:
             return
-        text = self.labelDialog.popUp(item.text())
+        text = self.textChangeDialog.popUp(item.text())
         if text is not None:
             item.setText(text)
             item.setBackground(generateColorByText(text))
             self.setDirty()
             self.updateComboBox()
 
+    def editText(self):
+        if not self.canvas.editing():
+            return
+        item = self.currentText()
+        if not item:
+            return
+        text = self.textChangeDialog.popUp(item)
+        if text is not None:
+            item.setText(text)
+            item.setBackground(generateColorByText(text))
+            self.setDirty()
+            self.updateComboBox()
     # Tzutalin 20160906 : Add file list and dock to move faster
     def fileitemDoubleClicked(self, item=None):
         currIndex = self.mImgList.index(ustr(item.text()))
@@ -775,11 +800,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.delete.setEnabled(selected)
         self.actions.copy.setEnabled(selected)
         self.actions.edit.setEnabled(selected)
+        self.actions.editText.setEnabled(selected)
         self.actions.shapeLineColor.setEnabled(selected)
         self.actions.shapeFillColor.setEnabled(selected)
 
     def addLabel(self, shape):
-        shape.paintLabel = self.displayLabelOption.isChecked()
+        # shape.paintLabel = self.displayLabelOption.isChecked()
         item = HashableQListWidgetItem(shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
@@ -803,8 +829,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color, difficult in shapes:
-            shape = Shape(label=label)
+        for label, text, points, line_color, fill_color, difficult in shapes:
+            shape = Shape(label=label, text=text)
             for x, y in points:
 
                 # Ensure the labels are within the bounds of the image. If not, fix them.
@@ -850,11 +876,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
         def format_shape(s):
             return dict(label=s.label,
+                        text=s.text,
                         line_color=s.line_color.getRgb(),
                         fill_color=s.fill_color.getRgb(),
                         points=[(p.x(), p.y()) for p in s.points],
                        # add chris
-                        difficult = s.difficult)
+                        difficult=s.difficult)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         # Can add differrent annotation formats here
@@ -875,7 +902,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.labelFile.saveCreateMLFormat(annotationFilePath, shapes, self.filePath, self.imageData,
                                                   self.labelHist, self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.labelFileFormat == LabelFileFormat.PICK:
-                if annotationFilePath[-4:].lower() != ".txt":
+                if annotationFilePath[-4:].lower() != ".tsv":
                     annotationFilePath += TSV_EXT
                 self.labelFile.savePICKFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                               self.lineColor.getRgb(), self.fillColor.getRgb())
@@ -1561,7 +1588,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if os.path.isfile(tsvPath) is False:
             return
 
-        self.set_format(FORMAT_YOLO)
+        self.set_format(FORMAT_PICK)
         tPICKParseReader = PICKReader(tsvPath, self.image)
         shapes = tPICKParseReader.getShapes()
         print (shapes)
@@ -1620,7 +1647,7 @@ def get_main_app(argv=[]):
     argparser = argparse.ArgumentParser()
     argparser.add_argument("image_dir", nargs="?")
     argparser.add_argument("predefined_classes_file",
-                           default=os.path.join(os.path.dirname(__file__), "data", "predefined_classes.txt"),
+                           default=os.path.join(os.path.dirname(__file__), "data", "classes.txt"),
                            nargs="?")
     argparser.add_argument("save_dir", nargs="?")
     args = argparser.parse_args(argv[1:])

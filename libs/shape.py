@@ -44,7 +44,7 @@ class Shape(object):
         self.fill = False
         self.selected = False
         self.difficult = difficult
-        self.paintLabel = paintLabel
+        self.paintLabel = True
         self.text = text
 
         self._highlightIndex = None
@@ -100,7 +100,7 @@ class Shape(object):
             # Uncommenting the following line will draw 2 paths
             # for the 1st vertex, and make it non-filled, which
             # may be desirable.
-            #self.drawVertex(vrtx_path, 0)
+            # self.drawVertex(vrtx_path, 0)
 
             for i, p in enumerate(self.points):
                 line_path.lineTo(p)
@@ -114,21 +114,24 @@ class Shape(object):
 
             # Draw text at the top-left
             if self.paintLabel:
-                min_x = sys.maxsize
+                max_x = -sys.maxsize - 1
                 min_y = sys.maxsize
                 for point in self.points:
-                    min_x = min(min_x, point.x())
+                    max_x = max(max_x, point.x())
                     min_y = min(min_y, point.y())
-                if min_x != sys.maxsize and min_y != sys.maxsize:
+                if max_x != -sys.maxsize-1 and min_y != sys.maxsize:
                     font = QFont()
-                    font.setPointSize(8)
+                    font.setPointSize(18)
                     font.setBold(True)
                     painter.setFont(font)
-                    if(self.label == None):
+                    painter.setPen(QColor(255, 0, 0))
+                    if self.label is None:
                         self.label = ""
-                    if(min_y < MIN_Y_LABEL):
+                    if self.text is None:
+                        self.text = "hong phai thinh"
+                    if min_y < MIN_Y_LABEL:
                         min_y += MIN_Y_LABEL
-                    painter.drawText(min_x, min_y, self.label)
+                    painter.drawText(max_x, min_y, self.text)
 
             if self.fill:
                 color = self.select_fill_color if self.selected else self.fill_color

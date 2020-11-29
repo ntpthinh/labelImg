@@ -139,8 +139,9 @@ class LabelFile(object):
 
         for shape in shapes:
             points = shape['points']
-            writer.addBndBox(points[0][0], points[0][1], points[0][0], points[0][1], points[0][0], points[0][1],
-                             points[0][0], points[0][1], shape['text'], shape['label'])
+            bndbox = LabelFile.sortPoints(points)
+            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], bndbox[4], bndbox[5],
+                             bndbox[6], bndbox[7], shape['text'], shape['label'])
 
         writer.save(targetFile=filename)
         return
@@ -206,3 +207,25 @@ class LabelFile(object):
             ymin = 1
 
         return (int(xmin), int(ymin), int(xmax), int(ymax))
+
+    @staticmethod
+    def sortPoints(points):
+        xmin = float('inf')
+        ymin = float('inf')
+        xmax = float('-inf')
+        ymax = float('-inf')
+        for p in points:
+            x = p[0]
+            y = p[1]
+            xmin = min(x, xmin)
+            ymin = min(y, ymin)
+            xmax = max(x, xmax)
+            ymax = max(y, ymax)
+
+        if xmin < 1:
+            xmin = 1
+
+        if ymin < 1:
+            ymin = 1
+
+        return (int(xmin), int(ymax), int(xmax), int(ymax), int(xmax), int(ymin), int(xmin), int(ymin))

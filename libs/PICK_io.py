@@ -44,6 +44,7 @@ class PICKReader:
 
     def __init__(self, filepath, image, classListPath=None):
         # shapes type:
+        # x1,y1,x2,y2,x3,y3,x4,y4,text,label
         # [labbel, [(x1,y1), (x2,y2), (x3,y3), (x4,y4)], color, color, difficult]
         self.shapes = []
         self.filepath = filepath
@@ -63,7 +64,7 @@ class PICKReader:
 
         self.verified = False
         # try:
-        self.parseYoloFormat()
+        self.parsePICKFormat()
         # except:
             # pass
 
@@ -73,28 +74,11 @@ class PICKReader:
     def addShape(self, x1, y1, x2, y2, x3, y3, x4, y4, text, label):
 
         points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-        self.shapes.append((label, points, None, None))
+        self.shapes.append((label, text, points, None, None, False))
 
-    def yoloLine2Shape(self, classIndex, xcen, ycen, w, h):
-        label = self.classes[int(classIndex)]
 
-        xmin = max(float(xcen) - float(w) / 2, 0)
-        xmax = min(float(xcen) + float(w) / 2, 1)
-        ymin = max(float(ycen) - float(h) / 2, 0)
-        ymax = min(float(ycen) + float(h) / 2, 1)
-
-        xmin = int(self.imgSize[1] * xmin)
-        xmax = int(self.imgSize[1] * xmax)
-        ymin = int(self.imgSize[0] * ymin)
-        ymax = int(self.imgSize[0] * ymax)
-
-        return label, xmin, ymin, xmax, ymax
-
-    def parseYoloFormat(self):
+    def parsePICKFormat(self):
         bndBoxFile = open(self.filepath, 'r')
         for bndBox in bndBoxFile:
-            classIndex, xcen, ycen, w, h = bndBox.strip().split(',')
-            label, xmin, ymin, xmax, ymax = self.yoloLine2Shape(classIndex, xcen, ycen, w, h)
-
-            # Caveat: difficult flag is discarded when saved as yolo format.
-            self.addShape(label, xmin, ymin, xmax, ymax, False)
+            x1, y1, x2, y2, x3, y3, x4, y4, text, label = bndBox.strip().split(',')
+            self.addShape(int(x1), int(y1), int(x2), int(y2), int(x3), int(y3), int(x4), int(y4), text, label)
