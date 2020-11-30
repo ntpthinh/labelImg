@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+from libs.ustr import ustr
 
 try:
     from PyQt5.QtGui import *
@@ -45,7 +45,7 @@ class Shape(object):
         self.selected = False
         self.difficult = difficult
         self.paintLabel = True
-        self.text = text
+        self.text = ustr(text)
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
@@ -128,7 +128,7 @@ class Shape(object):
                     if self.label is None:
                         self.label = ""
                     if self.text is None:
-                        self.text = "hong phai thinh"
+                        self.text = ""
                     if min_y < MIN_Y_LABEL:
                         min_y += MIN_Y_LABEL
                     painter.drawText(max_x, min_y, self.text)

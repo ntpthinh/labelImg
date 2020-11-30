@@ -78,7 +78,7 @@ class PICKReader:
 
 
     def parsePICKFormat(self):
-        bndBoxFile = open(self.filepath, 'r')
+        bndBoxFile = open(self.filepath, 'r', encoding=DEFAULT_ENCODING)
         for bndBox in bndBoxFile:
             x1, y1, x2, y2, x3, y3, x4, y4, text, label = bndBox.strip().split(',')
             self.addShape(int(x1), int(y1), int(x2), int(y2), int(x3), int(y3), int(x4), int(y4), text, label)

@@ -643,9 +643,7 @@ class MainWindow(QMainWindow, WindowMixin):
             return items[0]
         return None
 
-    def currentText(self):
-        shape = self.canvas.selectedShape
-        return shape['text']
+
 
     def addRecentFile(self, filePath):
         if filePath in self.recentFiles:
@@ -733,7 +731,7 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.currentItem()
         if not item:
             return
-        text = self.textChangeDialog.popUp(item.text())
+        text = self.labelDialog.popUp(item.text())
         if text is not None:
             item.setText(text)
             item.setBackground(generateColorByText(text))
@@ -743,15 +741,14 @@ class MainWindow(QMainWindow, WindowMixin):
     def editText(self):
         if not self.canvas.editing():
             return
-        item = self.currentText()
-        if not item:
+        shape = self.canvas.selectedShape
+        if not shape:
             return
-        text = self.textChangeDialog.popUp(item)
-        if text is not None:
-            item.setText(text)
-            item.setBackground(generateColorByText(text))
+        newText = self.textChangeDialog.popUp(shape.text)
+        if newText is not None:
+            shape.text = newText
             self.setDirty()
-            self.updateComboBox()
+
     # Tzutalin 20160906 : Add file list and dock to move faster
     def fileitemDoubleClicked(self, item=None):
         currIndex = self.mImgList.index(ustr(item.text()))
