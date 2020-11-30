@@ -16,13 +16,13 @@ class PICKWriter:
         self.localImgPath = localImgPath
         self.verified = False
 
-    def addBndBox(self, x1, y1, x2, y2, x3, y3, x4, y4, text,  label):
-        bndbox = {'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'x3': x3, 'y3': y3, 'x4': x4, 'y4': y4, 'text': text,
+    def addBndBox(self, i, x1, y1, x2, y2, x3, y3, x4, y4, text,  label):
+        bndbox = {'index': i, 'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2, 'x3': x3, 'y3': y3, 'x4': x4, 'y4': y4, 'text': text,
                   'label': label}
         self.boxlist.append(bndbox)
 
     def BndBox2PICKLine(self, box):
-        return box['x1'], box['y1'], box['x2'], box['y2'], box['x3'], box['y3'], box['x4'], box['y4'], box['text'], box['label']
+        return box['index'], box['x1'], box['y1'], box['x2'], box['y2'], box['x3'], box['y3'], box['x4'], box['y4'], box['text'], box['label']
 
     def save(self, targetFile=None):
 
@@ -34,8 +34,8 @@ class PICKWriter:
             out_file = codecs.open(targetFile, 'w', encoding=ENCODE_METHOD)
 
         for box in self.boxlist:
-            x1, y1, x2, y2, x3, y3, x4, y4, text, label = self.BndBox2PICKLine(box)
-            out_file.write("%d,%d,%d,%d,%d,%d,%d,%d,%s,%s\n" % (x1, y1, x2, y2, x3, y3, x4, y4, text, label))
+            i, x1, y1, x2, y2, x3, y3, x4, y4, text, label = self.BndBox2PICKLine(box)
+            out_file.write("%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s\n" % (i, x1, y1, x2, y2, x3, y3, x4, y4, text, label))
 
         out_file.close()
 
@@ -71,14 +71,17 @@ class PICKReader:
     def getShapes(self):
         return self.shapes
 
-    def addShape(self, x1, y1, x2, y2, x3, y3, x4, y4, text, label):
+    def addShape(self, i, x1, y1, x2, y2, x3, y3, x4, y4, text, label):
 
         points = [(x1, y1), (x2, y2), (x3, y3), (x4, y4)]
-        self.shapes.append((label, text, points, None, None, False))
+        self.shapes.append((i, label, text, points, None, None, False))
 
 
     def parsePICKFormat(self):
         bndBoxFile = open(self.filepath, 'r', encoding=DEFAULT_ENCODING)
         for bndBox in bndBoxFile:
-            x1, y1, x2, y2, x3, y3, x4, y4, text, label = bndBox.strip().split(',')
-            self.addShape(int(x1), int(y1), int(x2), int(y2), int(x3), int(y3), int(x4), int(y4), text, label)
+            s = bndBox.strip().split(',')
+            i, x1, y1, x2, y2, x3, y3, x4, y4 = s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7], s[8]
+            text = ''.join(s[9:len(s)])
+            label = ""
+            self.addShape(int(i), int(x1), int(y1), int(x2), int(y2), int(x3), int(y3), int(x4), int(y4), text, label)

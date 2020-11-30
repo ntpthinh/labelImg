@@ -38,7 +38,7 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=True, text=None):
+    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=True, text=None, index=None):
         self.label = label
         self.points = []
         self.fill = False
@@ -46,7 +46,7 @@ class Shape(object):
         self.difficult = difficult
         self.paintLabel = True
         self.text = ustr(text)
-
+        self.index = index
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
         self._highlightSettings = {
@@ -114,14 +114,14 @@ class Shape(object):
 
             # Draw text at the top-left
             if self.paintLabel:
-                max_x = -sys.maxsize - 1
-                min_y = sys.maxsize
+                max_x = - sys.maxsize - 1
+                max_y = - sys.maxsize - 1
                 for point in self.points:
                     max_x = max(max_x, point.x())
-                    min_y = min(min_y, point.y())
-                if max_x != -sys.maxsize-1 and min_y != sys.maxsize:
+                    max_y = max(max_y, point.y())
+                if max_x != -sys.maxsize-1 and max_y != - sys.maxsize - 1:
                     font = QFont()
-                    font.setPointSize(18)
+                    font.setPointSize(8)
                     font.setBold(True)
                     painter.setFont(font)
                     painter.setPen(QColor(255, 0, 0))
@@ -129,13 +129,14 @@ class Shape(object):
                         self.label = ""
                     if self.text is None:
                         self.text = ""
-                    if min_y < MIN_Y_LABEL:
-                        min_y += MIN_Y_LABEL
-                    painter.drawText(max_x, min_y, self.text)
+                    if max_y < MIN_Y_LABEL:
+                        max_y += MIN_Y_LABEL
+                    painter.drawText(max_x, max_y, self.text)
 
             if self.fill:
                 color = self.select_fill_color if self.selected else self.fill_color
                 painter.fillPath(line_path, color)
+
 
     def drawVertex(self, path, i):
         d = self.point_size / self.scale

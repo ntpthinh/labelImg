@@ -826,8 +826,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, text, points, line_color, fill_color, difficult in shapes:
-            shape = Shape(label=label, text=text)
+        for i, label, text, points, line_color, fill_color, difficult in shapes:
+            shape = Shape(label=label, text=text, index=i)
             for x, y in points:
 
                 # Ensure the labels are within the bounds of the image. If not, fix them.
@@ -874,6 +874,7 @@ class MainWindow(QMainWindow, WindowMixin):
         def format_shape(s):
             return dict(label=s.label,
                         text=s.text,
+                        index=s.index,
                         line_color=s.line_color.getRgb(),
                         fill_color=s.fill_color.getRgb(),
                         points=[(p.x(), p.y()) for p in s.points],
@@ -1151,10 +1152,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def showBoundingBoxFromAnnotationFile(self, filePath):
         if self.defaultSaveDir is not None:
             basename = os.path.basename(os.path.splitext(filePath)[0])
-            filedir = filePath.split(basename)[0].split("/")[-2]
+            # filedir = filePath.split(basename)[0].split("/")[-2]
             xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
             txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
-            jsonPath = os.path.join(self.defaultSaveDir, filedir + JSON_EXT)
+            jsonPath = os.path.join(self.defaultSaveDir, basename + JSON_EXT)
             tsvPath = os.path.join(self.defaultSaveDir, basename + TSV_EXT)
 
             """Annotation file priority:

@@ -542,6 +542,7 @@ class Canvas(QWidget):
             return
 
         self.current.close()
+        self.current.index = len(self.shapes) + 1
         self.shapes.append(self.current)
         self.current = None
         self.setHiding(False)

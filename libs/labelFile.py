@@ -140,8 +140,12 @@ class LabelFile(object):
         for shape in shapes:
             points = shape['points']
             bndbox = LabelFile.sortPoints(points)
-            writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], bndbox[4], bndbox[5],
-                             bndbox[6], bndbox[7], shape['text'], shape['label'])
+            if shape['label'] is None:
+                label = ""
+            else:
+                label = shape['label']
+            writer.addBndBox(shape['index'], bndbox[0], bndbox[1], bndbox[2], bndbox[3], bndbox[4], bndbox[5],
+                             bndbox[6], bndbox[7], shape['text'], label)
 
         writer.save(targetFile=filename)
         return
